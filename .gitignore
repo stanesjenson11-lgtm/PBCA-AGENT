@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Database
+memory/audit_log.db
+memory/scheduled_tasks.json
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Configuration (sensitive)
+config/local_settings.py
+
+# Temporary
+*.tmp
+*.bak
+*.cache
+
+# Secrets / credentials
+credentials.json
+config/credentials.json
+config/token.pickle
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual env
+.venv/
+venv/
+
+# Secrets
+.env
+credentials.json
+config/credentials.json
+config/token.pickle
+
+# Logs
+*.log
+output.txt

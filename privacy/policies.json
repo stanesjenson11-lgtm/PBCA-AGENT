@@ -1,0 +1,45 @@
+{
+    "sensitive_patterns": [
+        {
+            "name": "password",
+            "regex": "(?i)(password|passwd|pwd)\\s*[:=]?\\s*\\S+",
+            "description": "Password detection"
+        },
+        {
+            "name": "api_key",
+            "regex": "(?i)(api[_-]?key|token|secret)\\s*[:=]?\\s*['\"]?[a-zA-Z0-9_-]{16,}",
+            "description": "API key or token"
+        },
+        {
+            "name": "otp",
+            "regex": "(?i)\\b\\d{4,6}\\b.*(otp|code|verification)",
+            "description": "OTP or verification code"
+        },
+        {
+            "name": "credit_card",
+            "regex": "\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b",
+            "description": "Credit card number"
+        },
+        {
+            "name": "ssn",
+            "regex": "\\b\\d{3}-\\d{2}-\\d{4}\\b",
+            "description": "Social Security Number"
+        }
+    ],
+    "blocked_topics": [
+        "salary",
+        "bank account",
+        "credit card number",
+        "social security",
+        "private key",
+        "master password",
+        "authentication token"
+    ],
+    "pii_keywords": [
+        "ssn",
+        "social security number",
+        "passport number",
+        "driver license",
+        "tax id"
+    ]
+}

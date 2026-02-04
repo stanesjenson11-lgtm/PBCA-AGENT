@@ -1,0 +1,26 @@
+[
+    {
+        "name": "John",
+        "email": "john.doe@company.com",
+        "aliases": [
+            "John Doe",
+            "J. Doe"
+        ]
+    },
+    {
+        "name": "Sarah",
+        "email": "sarah.jones@company.com",
+        "aliases": [
+            "Sarah Jones",
+            "S. Jones"
+        ]
+    },
+    {
+        "name": "Manager",
+        "email": "manager@company.com",
+        "aliases": [
+            "My Manager",
+            "Boss"
+        ]
+    }
+]
