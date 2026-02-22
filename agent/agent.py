@@ -4,6 +4,7 @@ Implements the 8-step security pipeline
 """
 
 import logging
+import os
 from typing import Dict, Optional
 from agent.intent_parser import parse_with_correction
 from agent.mistral_llm import query_mistral
@@ -11,6 +12,11 @@ from agent.conversation import handle_conversation, is_greeting, is_joke_request
 from privacy.enforcer import check_and_block
 from planner.planner import create_plan, ActionStep
 from tools import email_tool, calendar_tool, desktop_tool, web_search_tool
+from tools import system_tool, timer_tool, clipboard_tool, screenshot_tool
+from tools import process_tool, audio_tool, archive_tool, pdf_tool
+from tools import web_reader_tool, organize_tool, triage_tool
+from tools import meeting_tool, code_review_tool, rpa_tool
+from tools import search_tool
 from memory.audit_logger import log_action
 
 
@@ -163,6 +169,8 @@ class Agent:
             
             # FORCE APPROVAL for critical steps if not already set
             if step.action == 'draft_email':
+                step.requires_approval = True
+            if step.action in ('kill_process', 'organize_directory', 'take_screenshot', 'perform_rpa_task'):
                 step.requires_approval = True
 
             try:
@@ -339,6 +347,75 @@ class Agent:
             except Exception as e:
                 return {"success": False, "error": f"Failed to synthesize answer: {e}"}
 
+        # ===================== NEW TOOLS =====================
+
+        elif action == "check_system":
+            return system_tool.check_system(params)
+
+        elif action == "start_timer":
+            return timer_tool.start_timer(params)
+
+        elif action == "get_clipboard":
+            return clipboard_tool.get_clipboard()
+
+        elif action == "set_clipboard":
+            return clipboard_tool.set_clipboard(params.get("content", ""))
+
+        elif action == "take_screenshot":
+            return screenshot_tool.take_screenshot(params)
+
+        elif action == "list_processes":
+            return process_tool.list_processes(params)
+
+        elif action == "kill_process":
+            return process_tool.kill_process(params)
+
+        elif action == "set_volume":
+            level = params.get("level", 50)
+            return audio_tool.set_volume(int(level))
+
+        elif action == "mute_volume":
+            return audio_tool.mute_volume()
+
+        elif action == "get_volume":
+            return audio_tool.get_volume()
+
+        elif action == "compress_files":
+            return archive_tool.compress_files(params)
+
+        elif action == "extract_files":
+            return archive_tool.extract_files(params)
+
+        elif action == "read_pdf":
+            return pdf_tool.read_pdf(params)
+
+        elif action == "read_url":
+            return web_reader_tool.read_url(params)
+
+        elif action == "organize_directory":
+            return organize_tool.organize_directory(params)
+
+        elif action == "triage_inbox":
+            return triage_tool.triage_inbox(params)
+
+        elif action == "record_meeting":
+            return meeting_tool.record_meeting(params)
+
+        elif action in ("stop_recording", "stop_recording_and_summarize"):
+            return meeting_tool.stop_and_summarize(params)
+
+        elif action == "summarize_meeting":
+            return meeting_tool.summarize_meeting_file(params)
+
+        elif action == "review_code":
+            return code_review_tool.review_code(params)
+
+        elif action == "perform_rpa_task":
+            return rpa_tool.perform_rpa_task(params)
+
+        elif action == "search_files":
+            return search_tool.search_files(params)
+
         else:
             return {"success": False, "error": f"Unknown action: {action}"}
     
@@ -364,6 +441,20 @@ class Agent:
         elif action == "create_file":
             filename = step.parameters.get("filename")
             return f"📄 Creating {filename}. Reply 'yes' to confirm"
+        
+        elif action == "kill_process":
+            name = step.parameters.get("name", step.parameters.get("pid", "unknown"))
+            return f"⚠️ Kill process '{name}'? Reply 'yes' to confirm"
+        
+        elif action == "organize_directory":
+            directory = step.parameters.get("directory", "unknown")
+            return f"📂 Organize files in '{directory}' by type? This will move files. Reply 'yes' to confirm"
+        
+        elif action == "take_screenshot":
+            return f"📸 Take a screenshot? Reply 'yes' to confirm"
+        
+        elif action == "perform_rpa_task":
+            return f"🤖 Execute RPA automation? This will control your mouse/keyboard. Reply 'yes' to confirm"
         
         else:
             return f"⚠️ Approve {action}? Reply 'yes' to confirm"
@@ -428,6 +519,68 @@ class Agent:
             result = results[-1]
             return f"🌐 {result.get('answer', 'No answer found.')}\n\n[Source: DuckDuckGo]"
         
+        # ===================== NEW TOOL RESPONSES =====================
+
+        elif action == "check_system":
+            result = results[-1]
+            return result.get("message", "✅ System stats retrieved.")
+
+        elif action == "start_timer":
+            result = results[-1]
+            return result.get("message", "✅ Timer started.")
+
+        elif action in ("get_clipboard", "set_clipboard"):
+            result = results[-1]
+            return result.get("message", "✅ Clipboard action completed.")
+
+        elif action == "take_screenshot":
+            result = results[-1]
+            return result.get("message", "✅ Screenshot taken.")
+
+        elif action in ("list_processes", "kill_process"):
+            result = results[-1]
+            return result.get("message", "✅ Process action completed.")
+
+        elif action in ("set_volume", "mute_volume", "get_volume"):
+            result = results[-1]
+            return result.get("message", "✅ Audio action completed.")
+
+        elif action in ("compress_files", "extract_files"):
+            result = results[-1]
+            return result.get("message", "✅ Archive action completed.")
+
+        elif action == "read_pdf":
+            result = results[-1]
+            return result.get("message", "✅ PDF read.")
+
+        elif action == "read_url":
+            result = results[-1]
+            return result.get("message", "✅ URL read.")
+
+        elif action == "organize_directory":
+            result = results[-1]
+            return result.get("message", "✅ Directory organized.")
+
+        elif action == "triage_inbox":
+            result = results[-1]
+            return result.get("message", "✅ Inbox triaged.")
+
+        elif action in ("record_meeting", "stop_recording", "summarize_meeting"):
+            result = results[-1]
+            return result.get("message", "✅ Meeting action completed.")
+
+        elif action == "review_code":
+            result = results[-1]
+            return result.get("message", "✅ Code review completed.")
+
+        elif action == "perform_rpa_task":
+            result = results[-1]
+            return result.get("message", "✅ RPA task completed.")
+
+        elif action == "search_files":
+            result = results[-1]
+            return result.get("message", "✅ Search completed.")
+
         else:
             return "✅ Action completed successfully"
 

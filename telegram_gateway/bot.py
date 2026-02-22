@@ -5,7 +5,7 @@ Secure polling-based message handler with user verification
 
 import logging
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 from config.settings import TELEGRAM_BOT_TOKEN, AUTHORIZED_USER_ID
 
 
@@ -52,6 +52,13 @@ class TelegramGateway:
         
         logging.info(f"Message from {user_id}: {sanitized_message}")
         
+        # Register this chat for timer notifications
+        try:
+            from tools.timer_tool import set_telegram_notifier
+            set_telegram_notifier(self.application, update.effective_chat.id)
+        except Exception:
+            pass
+        
         try:
             # Call agent handler
             response = await self.message_handler(user_id, sanitized_message)
@@ -89,7 +96,7 @@ class TelegramGateway:
         
         help_text = """🤖 PBCA Agent Help
 
-**Natural Language Commands:**
+**Core Commands:**
 • "Draft a mail to John that [message]"
 • "Check my calendar today"
 • "List files in my Documents folder"
@@ -97,10 +104,27 @@ class TelegramGateway:
 • "Schedule a meeting tomorrow at 3 PM"
 • "Remind me every Monday at 9 AM"
 
+**New Features:**
+• "Check system stats" / "CPU usage"
+• "Set a timer for 5 minutes"
+• "What's on my clipboard"
+• "Take a screenshot"
+• "List running processes" / "Kill notepad"
+• "Set volume to 50" / "Mute"
+• "Compress my Downloads folder"
+• "Read resume.pdf"
+• "Read this URL https://..."
+• "Organize my Downloads folder"
+• "Triage my inbox"
+• "Start recording meeting" / "Stop recording"
+• "Review my auth.py"
+• "Search for [query]"
+
 **Commands:**
 • /status - Check agent status
 • /help - Show this help message
 
+**Voice Mode:** Run with --voice flag for hands-free operation.
 All sensitive actions require your approval before execution."""
         
         await update.message.reply_text(help_text)
@@ -112,6 +136,7 @@ All sensitive actions require your approval before execution."""
         # Add handlers
         self.application.add_handler(CommandHandler("status", self.handle_status))
         self.application.add_handler(CommandHandler("help", self.handle_help))
+        self.application.add_handler(CallbackQueryHandler(self.handle_timer_callback, pattern="^timer_"))
         self.application.add_handler(
             MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message)
         )
@@ -133,6 +158,32 @@ All sensitive actions require your approval before execution."""
             write_timeout=60     # Write timeout
         )
     
+    async def handle_timer_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle timer snooze/dismiss button presses."""
+        query = update.callback_query
+        await query.answer()
+
+        data = query.data  # e.g. "timer_snooze_1_5" or "timer_dismiss_1"
+        parts = data.split("_")
+
+        try:
+            if parts[1] == "dismiss":
+                timer_id = int(parts[2])
+                from tools.timer_tool import cancel_timer
+                cancel_timer(timer_id)
+                await query.edit_message_text("✅ Timer dismissed.")
+
+            elif parts[1] == "snooze":
+                timer_id = int(parts[2])
+                minutes = int(parts[3])
+                from tools.timer_tool import snooze_timer
+                result = snooze_timer(timer_id, minutes)
+                await query.edit_message_text(f"⏰ Snoozed for {minutes} minutes. I'll remind you again!")
+
+        except Exception as e:
+            logging.error(f"Timer callback error: {e}")
+            await query.edit_message_text(f"❌ Error: {e}")
+
     async def send_message(self, user_id: int, text: str):
         """Send message to user"""
         try:

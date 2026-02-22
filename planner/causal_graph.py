@@ -18,7 +18,31 @@ CAUSAL_DEPENDENCIES = {
     "reminder": [],
     "web_search": [],
     "status": [],
-    "help": []
+    "help": [],
+    # New automation tools
+    "check_system": [],
+    "start_timer": [],
+    "get_clipboard": [],
+    "set_clipboard": [],
+    "take_screenshot": [],
+    "list_processes": [],
+    "kill_process": [],
+    "set_volume": [],
+    "mute_volume": [],
+    "get_volume": [],
+    "compress_files": [],
+    "extract_files": [],
+    "read_pdf": [],
+    "read_url": [],
+    "organize_directory": [],
+    # Advanced tools
+    "triage_inbox": [],
+    "record_meeting": [],
+    "stop_recording": [],
+    "summarize_meeting": [],
+    "review_code": [],
+    "perform_rpa_task": [],
+    "search_files": [],
 }
 
 # Constraints that trigger additional actions

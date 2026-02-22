@@ -6,3 +6,23 @@ google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
 duckduckgo-search
+# Voice & Accessibility
+openai-whisper
+sounddevice
+pyttsx3
+scipy
+# System & Process tools
+psutil
+# Clipboard
+pyperclip
+# Screenshot & RPA
+pyautogui
+opencv-python
+# Audio Control (Windows)
+pycaw
+comtypes
+# PDF Reader
+pypdf
+# Web Reader
+requests
+beautifulsoup4

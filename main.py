@@ -6,6 +6,7 @@ Main Entry Point
 import sys
 import logging
 import asyncio
+import argparse
 from agent.agent import Agent
 from telegram_gateway.bot import TelegramGateway
 from scheduler.scheduler import Scheduler
@@ -29,6 +30,7 @@ class PBCAAgent:
         self.agent = Agent()
         self.scheduler = None
         self.telegram_gateway = None
+        self.voice_gateway = None
     
     async def telegram_message_handler(self, user_id: int, message: str) -> str:
         """Handle messages from Telegram"""
@@ -103,6 +105,37 @@ class PBCAAgent:
             logger.info("\n[SHUTDOWN] Received shutdown signal")
             self.stop()
     
+    def start_voice_mode(self, require_wake_word: bool = False):
+        """Start the agent in voice mode for hands-free operation."""
+        logger.info("=" * 50)
+        logger.info("PBCA Agent Starting in VOICE MODE...")
+        logger.info("=" * 50)
+        
+        # Initialize database
+        init_database()
+        
+        # Start scheduler
+        self.scheduler = Scheduler(self.scheduler_task_callback)
+        self.scheduler.start()
+        
+        try:
+            from voice.voice_gateway import start_voice_mode as _start_voice
+            logger.info("[SETUP] Starting Voice Gateway...")
+            logger.info("Components:")
+            logger.info("  • Privacy Enforcer: Active")
+            logger.info("  • Causal Planner: Active")
+            logger.info("  • Voice Gateway: Listening")
+            logger.info("  • Wake Word: " + ("Enabled" if require_wake_word else "Disabled"))
+            logger.info("=" * 50)
+            _start_voice(self.agent, require_wake_word=require_wake_word)
+        except ImportError as e:
+            logger.error(f"Voice module dependencies missing: {e}")
+            logger.error("Install with: pip install openai-whisper sounddevice pyttsx3 scipy")
+            sys.exit(1)
+        except KeyboardInterrupt:
+            logger.info("\n[SHUTDOWN] Received shutdown signal")
+            self.stop()
+    
     def stop(self):
         """Stop all components"""
         logger.info("[SHUTDOWN] Stopping components...")
@@ -115,10 +148,18 @@ class PBCAAgent:
 
 def main():
     """Main entry point"""
+    parser = argparse.ArgumentParser(description="PBCA Agent — Privacy-Preserving AI Assistant")
+    parser.add_argument("--voice", action="store_true", help="Start in voice mode (hands-free)")
+    parser.add_argument("--wake-word", action="store_true", help="Require wake word 'hey pbca' in voice mode")
+    args = parser.parse_args()
+    
     app = PBCAAgent()
     
     try:
-        app.start()
+        if args.voice:
+            app.start_voice_mode(require_wake_word=args.wake_word)
+        else:
+            app.start()
     except Exception as e:
         logger.error(f"Fatal error: {e}", exc_info=True)
         sys.exit(1)
